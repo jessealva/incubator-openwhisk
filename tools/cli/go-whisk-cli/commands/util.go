@@ -39,7 +39,10 @@ import (
     "sort"
     "reflect"
     "bytes"
+    "strconv"
 )
+
+const DEFAULT_COLUMN_WIDTH = 70
 
 type QualifiedName struct {
     namespace   string  // namespace. does not include leading '/'.  may be "" (i.e. default namespace)
@@ -161,6 +164,71 @@ func getQualifiedName(name string, namespace string) (string) {
         }
         return fmt.Sprintf("/%s/%s", namespace, name)
     }
+}
+
+/**
+    Simple method to find the longest string in an Array of strings.
+ */
+func getColumnWidth(names []string) {
+    columnWidth := DEFAULT_COLUMN_WIDTH
+    if len(names) < 1 {
+        return columnWidth
+    }
+
+    for _, name := range names {
+        nameLength := len(name)
+        if nameLength >= (columnWidth - 1) {
+            columnWidth = nameLength
+        }
+    }
+
+    return columnWidth //Adding one to have a space separator between columns
+}
+
+/***
+    Takes a string, which is assumed will be printed, and truncate the string based on the maxLength given. The
+    truncated string has the following characteristics:
+
+    1. It will have a 3 space padding at the end
+    2. The last 10 characters of the string will be printed
+    3. The last 10 characters are preceded by three periods (...)
+    4. The number of characters displayed at the beginning of the string are dictated by the formula:
+                    space padding   final characters in string     three periods representing the truncated substring
+        maxLength - (    3         +  10                         +               3     )
+
+    Note: This has yet to be tested with unicode characters which could end up affecting the accuracy of the math.
+
+    @name The string to truncate
+    @maxLength The maximum number of characters the string should be.
+ */
+func truncateString(name string, maxLength int) (string) {
+    padding := 1
+    const postEllipsisLen = 10
+    const ellipsisLen = 3
+    trueLength := maxLength - padding
+    nameLength := len(name)
+
+    if nameLength < trueLength {
+        return name
+    }
+    /*
+    When printed out, the whole line should look like this:
+
+    xxxxx...yyyy   <published state>    <status>
+
+    where "xxx...yyy   " is the following:
+    "   " - There will be 3 spaces separating the name and the state.
+    yyy - The final 10 characters of the name
+    ... - 3 periods replace the truncated characters
+    xxx - This is the first (maxLength - 16) characters of the string.
+
+    16 because we're leaving leaving 3 white spaces between the name and the publish state, 10 characters at the end,
+    and the 3 dots themselves, so 3 + 10 + 3
+     */
+    startDots := trueLength - (ellipsisLen + postEllipsisLen)
+    truncatedName := name[:startDots] + "..." + name[nameLength - postEllipsisLen:nameLength]
+
+    return truncatedName
 }
 
 func csvToQualifiedActions(artifacts string) ([]string) {
@@ -302,15 +370,18 @@ func printSummary(collection interface{}) {
 
 func printActionList(actions []whisk.Action) {
     fmt.Fprintf(color.Output, "%s\n", boldString("actions"))
+    formatString := "%-" + strconv.Atoi(getColumnWidth(actions)) + "s %s %s\n"
     for _, action := range actions {
         publishState := wski18n.T("private")
         kind := getValueString(action.Annotations, "exec")
-        fmt.Printf("%-70s %s %s\n", fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
+        //fmt.Printf("%-" + strconv.Atoi(maxName) + "s %s %s\n", fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
+        fmt.Printf(formatString, fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
     }
 }
 
 func printTriggerList(triggers []whisk.Trigger) {
     fmt.Fprintf(color.Output, "%s\n", boldString("triggers"))
+    formatString := "%-" + strconv.Atoi(getColumnWidth(actions)) + "s %s %s\n"
     for _, trigger := range triggers {
         publishState := wski18n.T("private")
         fmt.Printf("%-70s %s\n", fmt.Sprintf("/%s/%s", trigger.Namespace, trigger.Name), publishState)
@@ -332,7 +403,11 @@ func printRuleList(rules []whisk.Rule) {
     fmt.Fprintf(color.Output, "%s\n", boldString("rules"))
     for _, rule := range rules {
         publishState := wski18n.T("private")
-        fmt.Printf("%-70s %s\n", fmt.Sprintf("/%s/%s", rule.Namespace, rule.Name), publishState)
+
+        truncatedName := truncateString(getQualifiedName(rule.Name, rule.Namespace), 70)
+        fmt.Println("truncatedName len: " + strconv.Itoa(len(truncatedName)))
+        //fmt.Printf("%-70s %s\n", fmt.Sprintf("/%s/%s", rule.Namespace, rule.Name), publishState)
+        fmt.Printf("%-70s %s\n", truncatedName, publishState)
     }
 }
 
