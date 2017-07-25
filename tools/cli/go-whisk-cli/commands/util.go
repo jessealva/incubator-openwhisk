@@ -169,14 +169,14 @@ func getQualifiedName(name string, namespace string) (string) {
 /**
     Simple method to find the longest string in an Array of strings.
  */
-func getColumnWidth(names []string) {
+func getColumnWidth(names []whisk.Action) (int) {
     columnWidth := DEFAULT_COLUMN_WIDTH
     if len(names) < 1 {
         return columnWidth
     }
 
     for _, name := range names {
-        nameLength := len(name)
+        nameLength := len(name.Name)
         if nameLength >= (columnWidth - 1) {
             columnWidth = nameLength
         }
@@ -370,18 +370,18 @@ func printSummary(collection interface{}) {
 
 func printActionList(actions []whisk.Action) {
     fmt.Fprintf(color.Output, "%s\n", boldString("actions"))
-    formatString := "%-" + strconv.Atoi(getColumnWidth(actions)) + "s %s %s\n"
+    //formatString := "%-" + strconv.Atoi(getColumnWidth(actions)) + "s %s %s\n"
     for _, action := range actions {
         publishState := wski18n.T("private")
         kind := getValueString(action.Annotations, "exec")
-        //fmt.Printf("%-" + strconv.Atoi(maxName) + "s %s %s\n", fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
-        fmt.Printf(formatString, fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
+        fmt.Printf("%-70s %s %s\n", fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
+        //fmt.Printf(formatString, fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
     }
 }
 
 func printTriggerList(triggers []whisk.Trigger) {
     fmt.Fprintf(color.Output, "%s\n", boldString("triggers"))
-    formatString := "%-" + strconv.Atoi(getColumnWidth(actions)) + "s %s %s\n"
+    //formatString := "%-" + strconv.Atoi(getColumnWidth(actions)) + "s %s %s\n"
     for _, trigger := range triggers {
         publishState := wski18n.T("private")
         fmt.Printf("%-70s %s\n", fmt.Sprintf("/%s/%s", trigger.Namespace, trigger.Name), publishState)
