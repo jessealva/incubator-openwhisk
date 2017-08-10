@@ -102,6 +102,18 @@ var namespaceGetCmd = &cobra.Command{
         printList(namespace.Contents.Packages)
         printList(namespace.Contents.Actions)
         printList(namespace.Contents.Triggers)
+        //Prepare rule list with status before printing
+        for index, rule := range namespace.Contents.Rules {
+            ruleStatus, _, err := client.Rules.Get(rule.Name)
+            if err != nil {
+                errStr := wski18n.T("Unable to get status of rule '{{.name}}': {{.err}}",
+                    map[string]interface{}{"name": rule.Name, "err": err})
+                fmt.Println(errStr)
+                werr := whisk.MakeWskErrorFromWskError(errors.New(errStr), err, whisk.EXIT_CODE_ERR_GENERAL, whisk.DISPLAY_MSG, whisk.NO_DISPLAY_USAGE)
+                return werr
+            }
+            namespace.Contents.Rules[index].Status = ruleStatus.Status
+        }
         printList(namespace.Contents.Rules)
 
         return nil

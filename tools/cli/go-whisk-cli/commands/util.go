@@ -39,6 +39,7 @@ import (
     "sort"
     "reflect"
     "bytes"
+    "strconv"
 )
 
 type QualifiedName struct {
@@ -300,12 +301,16 @@ func printSummary(collection interface{}) {
     }
 }
 
+
+var statePadding = strconv.Itoa(20)
+var namePadding = strconv.Itoa(70)
+
 func printActionList(actions []whisk.Action) {
     fmt.Fprintf(color.Output, "%s\n", boldString("actions"))
     for _, action := range actions {
         publishState := wski18n.T("private")
         kind := getValueString(action.Annotations, "exec")
-        fmt.Printf("%-70s %s %s\n", fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
+        fmt.Printf("%-" + namePadding + "s %-" + statePadding + "s %s\n", fmt.Sprintf("/%s/%s", action.Namespace, action.Name), publishState, kind)
     }
 }
 
@@ -313,7 +318,7 @@ func printTriggerList(triggers []whisk.Trigger) {
     fmt.Fprintf(color.Output, "%s\n", boldString("triggers"))
     for _, trigger := range triggers {
         publishState := wski18n.T("private")
-        fmt.Printf("%-70s %s\n", fmt.Sprintf("/%s/%s", trigger.Namespace, trigger.Name), publishState)
+        fmt.Printf("%-" + namePadding + "s %s\n", fmt.Sprintf("/%s/%s", trigger.Namespace, trigger.Name), publishState)
     }
 }
 
@@ -324,7 +329,7 @@ func printPackageList(packages []whisk.Package) {
         if xPackage.Publish != nil && *xPackage.Publish {
             publishState = wski18n.T("shared")
         }
-        fmt.Printf("%-70s %s\n", fmt.Sprintf("/%s/%s", xPackage.Namespace, xPackage.Name), publishState)
+        fmt.Printf("%-" + namePadding + "s %s\n", fmt.Sprintf("/%s/%s", xPackage.Namespace, xPackage.Name), publishState)
     }
 }
 
@@ -332,7 +337,7 @@ func printRuleList(rules []whisk.Rule) {
     fmt.Fprintf(color.Output, "%s\n", boldString("rules"))
     for _, rule := range rules {
         publishState := wski18n.T("private")
-        fmt.Printf("%-70s %-20s %s\n", fmt.Sprintf("/%s/%s", rule.Namespace, rule.Name), publishState, rule.Status)
+        fmt.Printf("%-" + namePadding + "s %-" + statePadding + "s %s\n", fmt.Sprintf("/%s/%s", rule.Namespace, rule.Name), publishState, rule.Status)
     }
 }
 
@@ -346,7 +351,7 @@ func printNamespaceList(namespaces []whisk.Namespace) {
 func printActivationList(activations []whisk.Activation) {
     fmt.Fprintf(color.Output, "%s\n", boldString("activations"))
     for _, activation := range activations {
-        fmt.Printf("%s %-20s\n", activation.ActivationID, activation.Name)
+        fmt.Printf("%s %-" + statePadding + "s\n", activation.ActivationID, activation.Name)
     }
 }
 
